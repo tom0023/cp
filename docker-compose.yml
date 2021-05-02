@@ -1,0 +1,55 @@
+version: '3.8'
+
+services:
+
+  # PHP Apache
+  php-apache:
+    container_name: cp-apache-container
+    build: ./docker-configs/apache
+    ports:
+      - 80:80
+      - 443:443
+    volumes:
+      - ./web:/var/www/web
+    restart: always
+    depends_on:
+      - mysql
+
+  mysql:
+    container_name: cp-mysql-container
+    build: ./docker-configs/mysql
+    ports:
+      - 3306:3306
+    volumes:
+      - ./docker-configs/mysql/conf.d:/etc/mysql/conf.d
+      - ./docker-configs/mysql/init:/docker-entrypoint-initdb.d
+      - ./docker-configs/mysql/data:/var/lib/mysql
+      - ./docker-configs/mysql/log:/var/log/mysql
+      - ./docker-configs/mysql/dump:/dump
+    restart: always
+    environment:
+      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD}
+      MYSQL_DATABASE: ${MYSQL_DATABASE}
+      MYSQL_USER: ${MYSQL_USERNAME}
+      MYSQL_PASSWORD: ${MYSQL_USER_PASSWORD}
+      TZ: 'Asia/Tokyo'
+    privileged: true
+
+  phpmyadmin:
+    container_name: cp-phpmyadmin-container
+    build: ./docker-configs/phpadmin
+    environment:
+      PMA_ARBITRARY: 1
+      PMA_HOST: mysql
+      PMA_USER: root
+      PMA_PASSWORD: ${MYSQL_USER_PASSWORD}
+    ports:
+      - 9090:80
+    depends_on:
+      - mysql
+  mailhog:
+   container_name: cp-mailhog-container
+   image: mailhog/mailhog
+   ports:
+     - 8025:8025
+     - 1025:1025
